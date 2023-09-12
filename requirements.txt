@@ -1,0 +1,6 @@
+# These requirements are for development and testing only, not for production.
+requests
+dearpygui
+os
+datetime
+json
