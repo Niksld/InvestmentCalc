@@ -74,7 +74,6 @@ def load():
         loaded_json = json.load(file)
     try:
         for key in items_to_save.keys():
-            print(items_to_save[key], loaded_json[key])
             dpg.set_value(key, loaded_json[key])
     except KeyError:
         print("Loading failed! - Savefile out of date?")
@@ -91,6 +90,8 @@ def check_savefile():
     else:
         if not path.exists(f'{appdata_path}/InvestmentCalc/'):
             mkdir(f'{appdata_path}/InvestmentCalc/')
+        print("Save file not found - creating savefile")
+        save()
         #dpg.configure_viewport("title", f"{dpg.get_viewport_title} - No save loaded")
 
 def details_saved():
@@ -101,7 +102,6 @@ def details_saved():
         loaded_json = json.load(file)
     try:
         for key in items_to_save.keys():
-            print(dpg.get_value(key), loaded_json[key])
             if dpg.get_value(key) != loaded_json[key]:
                 return False
         return True
@@ -109,10 +109,13 @@ def details_saved():
         print("Check failed! - is the file corrupt?")
 
 def update_vars():
-    dpg.set_value("share_price_czk", float(dpg.get_value("exchange_rate"))*float(dpg.get_value("share_price")))
-    dpg.set_value("monthly_investment", float(dpg.get_value("annual_investment"))/12)
-    dpg.set_value("shares_to_buy", float(dpg.get_value("monthly_investment"))/float(dpg.get_value("share_price_czk")))
-
+    try:
+        dpg.set_value("share_price_czk", float(dpg.get_value("exchange_rate"))*float(dpg.get_value("share_price")))
+        dpg.set_value("monthly_investment", float(dpg.get_value("annual_investment"))/12)
+        dpg.set_value("shares_to_buy", float(dpg.get_value("monthly_investment"))/float(dpg.get_value("share_price_czk")))
+    except ZeroDivisionError:
+        print("Zero divison! - Are you sure you wanted this?")
+    
 def exit_program():
     if not details_saved():
         dpg.show_item("exit_popup")
@@ -134,8 +137,8 @@ with dpg.window(width=dpg.get_viewport_width(), height=dpg.get_viewport_height()
         dpg.add_menu_item(label="Copyright 2023, Matrysoft Inc.", parent="about_menu")
     
     # create window elements
-    items_to_save.update({"annual_investment": dpg.add_input_text(decimal=True, tag='annual_investment', hint="Total annual", callback=update_vars, width=100, pos=(10,30), label="Total annual investment [ CZK ]")})
-    items_to_save.update({"share_price": dpg.add_input_text(decimal=True, tag='share_price', hint="Share Price", pos=(10,60), label="Current share price [ USD ]", callback=update_vars)})
+    items_to_save.update({"annual_investment": dpg.add_input_text(decimal=True, tag='annual_investment', hint="Total annual", callback=update_vars, width=100, pos=(10,30), label="Total annual investment [ CZK ]", default_value=float(100))})
+    items_to_save.update({"share_price": dpg.add_input_text(decimal=True, tag='share_price', hint="Share Price", pos=(10,60), label="Current share price [ USD ]", callback=update_vars, default_value=float(10))})
     dpg.add_input_text(decimal=True, tag='exchange_rate', readonly=True, hint="Current Exchange Rate", label="Current exchange rate [ 1 USD->CZK ]", pos=(10,90))
     dpg.add_input_text(decimal=True, tag='share_price_czk', readonly=True, hint="Share Price [CZK]", label="Share price [ CZK ]", pos=(10,120))
     dpg.add_input_text(decimal=True, tag='monthly_investment', readonly=True, hint="Monthly Investment", label="Monthly investment", pos=(10,150))
