@@ -1,15 +1,12 @@
 # Investment Calculator
 
-Simple and easy way to know how much you should invest.
+Simple calculator for investing
 
 ## Usage
 
-Download the release. Alternatively you can download the project and run it by:
+Download the latest commit and run the project by:
 
 ```bash
-$ python -m main.py
+$ pip install -r requirements.txt
+$ python ./src/main.py
 ```
-
-## Development
-
-Matry - Jj

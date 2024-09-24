@@ -1,42 +1,9 @@
 import requests
 import dearpygui.dearpygui as dpg
-from os import mkdir, path, getenv, rename
+from os import mkdir, path, getenv, rename, makedirs
+from platform import system as p_system         
 from datetime import datetime
 import json
-
-#DPG init
-dpg.create_context()
-viewport_title = "Investment calculator"
-dpg.create_viewport(title=viewport_title, width=800, height=400)
-
-#DPG Theme - WIP, mozna i light mode?
-with dpg.theme() as default_theme:
-    with dpg.theme_component(dpg.mvAll):
-        #dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (14,10,12), category=dpg.mvThemeCat_Core)
-        pass
-    
-dpg.bind_theme(default_theme)
-    
-#DPG Font - WIP
-with dpg.font_registry():
-    with dpg.font(path.relpath("fonts/OpenSans-Regular.ttf"), 16) as opensans_regular:
-        dpg.add_font_range(0x0100, 0x25FF) # CZ Fix
-    with dpg.font(path.relpath("fonts/OpenSans-Italic.ttf"), 16) as opensans_regular_i:
-        dpg.add_font_range(0x0100, 0x25FF)
-    with dpg.font(path.relpath("fonts/OpenSans-Light.ttf"), 16) as opensans_light:
-        dpg.add_font_range(0x0100, 0x25FF)
-    with dpg.font(path.relpath("fonts/OpenSans-LightItalic.ttf"), 16) as opensans_light_i:
-        dpg.add_font_range(0x0100, 0x25FF)
-        
-#Vars
-appdata_path = getenv('appdata')
-savefile_path = f'{appdata_path}/InvestmentCalc/save.file'
-savefile_exists = False
-
-items_to_save = {}
-
-czk_rate = 0
-last_rate_update = None
 
 # get exchange rates
 def get_exchange_rate():
@@ -122,6 +89,60 @@ def exit_program():
     else:
         dpg.stop_dearpygui()
     
+
+def get_save_path() -> str:
+    """
+    Gets path for save folder\n\n
+    Windows: AppData/Roaming
+    Linux/Unix based: ~/.icalc/
+    """
+    
+    retval = None
+    if p_system() == "Windows":
+        retval = getenv("APPDATA") + "\\icalc\\"
+    else:
+        retval = getenv("HOME") + "/.icalc/"
+    
+    # If the folder doesnt exist, create it
+    if not path.exists(retval):
+        makedirs(retval)
+
+    return retval
+
+#DPG init
+dpg.create_context()
+viewport_title = "Investment calculator"
+dpg.create_viewport(title=viewport_title, width=800, height=400)
+
+#DPG Theme - WIP, mozna i light mode?
+with dpg.theme() as default_theme:
+    with dpg.theme_component(dpg.mvAll):
+        #dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (14,10,12), category=dpg.mvThemeCat_Core)
+        pass
+    
+dpg.bind_theme(default_theme)
+    
+#DPG Font - WIP
+with dpg.font_registry():
+    with dpg.font(path.relpath("src/fonts/OpenSans-Regular.ttf"), 16) as opensans_regular:
+        dpg.add_font_range(0x0100, 0x25FF) # CZ Fix
+    with dpg.font(path.relpath("src/fonts/OpenSans-Italic.ttf"), 16) as opensans_regular_i:
+        dpg.add_font_range(0x0100, 0x25FF)
+    with dpg.font(path.relpath("src/fonts/OpenSans-Light.ttf"), 16) as opensans_light:
+        dpg.add_font_range(0x0100, 0x25FF)
+    with dpg.font(path.relpath("src/fonts/OpenSans-LightItalic.ttf"), 16) as opensans_light_i:
+        dpg.add_font_range(0x0100, 0x25FF)
+        
+#Vars
+appdata_path = get_save_path()
+savefile_path = f'{appdata_path}/InvestmentCalc/save.file'
+savefile_exists = False
+
+items_to_save = {}
+
+czk_rate = 0
+last_rate_update = None
+
 # Main window
 with dpg.window(width=dpg.get_viewport_width(), height=dpg.get_viewport_height(), tag="main_window", no_resize=True, no_title_bar=True, no_move=True, pos=(0,0)):
     # create menubar
@@ -134,7 +155,7 @@ with dpg.window(width=dpg.get_viewport_width(), height=dpg.get_viewport_height()
         dpg.add_menu_item(label="Exit", parent="file_menu", callback=exit_program)
         
         dpg.add_menu(label="About", tag="about_menu")
-        dpg.add_menu_item(label="Copyright 2023, Matrysoft Inc.", parent="about_menu")
+        dpg.add_menu_item(label="Copyright 2023, Niksld", parent="about_menu")
     
     # create window elements
     items_to_save.update({"annual_investment": dpg.add_input_text(decimal=True, tag='annual_investment', hint="Total annual", callback=update_vars, width=100, pos=(10,30), label="Total annual investment [ CZK ]", default_value=float(100))})
@@ -174,26 +195,3 @@ dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
 dpg.destroy_context()
-
-# # Initialize variables
-# total_investment = 0
-# share_price = 0
-
-# # Input annual investment (one-time question)
-# annual_investment = float(input("Enter the total annual investment amount in CZK : "))
-
-# # Input share price (asked every time)
-# share_price = float(input("Enter the current share price: "))
-# share_price_czk = share_price * data["conversion_rates"]["CZK"]
-# # Calculate monthly investment
-# monthly_investment = annual_investment / 12
-
-# # Calculate number of shares to buy
-# shares_to_buy = monthly_investment / share_price_czk
-
-# # Display the result
-# print("-------------------------------------------")
-# print(f"You should buy {shares_to_buy:.3f} shares this month.")
-# print("-------------------------------------------")
-# print("Price per share in CZK:",share_price_czk)
-# print("Monthly investment:",monthly_investment)
